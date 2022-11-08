@@ -23,6 +23,7 @@ typedef struct Status {
 typedef struct Player {
 
 	Vector2 pos;
+	int speed;
 	int radius;
 	Status status;
 };
@@ -33,7 +34,7 @@ typedef struct Player {
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// ライブラリの初期化
-	Novice::Initialize(kWindowTitle, 1280, 720);
+	Novice::Initialize(kWindowTitle, 1280, 768);
 
 
 	const int kWindowWidth = 616;
@@ -44,10 +45,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	char keys[256] = { 0 };
 	char preKeys[256] = { 0 };
 
-	Player player1{ {512,552},64,{true,300} };
-	Player player2{ {576,616},64,{true,300} };
-	Player player3{ {640,552},64,{true,300} };
-	Player player4{ {704,616},64,{true,300} };
+	Player player1{ {64,64},64,64,{true,300} };
+	Player player2{ {128,64},64,64,{true,300} };
+	Player player3{ {192,64},64,64,{true,300} };
+	Player player4{ {256,64},64,64,{true,300} };
 
 	int ghTestMap = Novice::LoadTexture("./testMap.png");
 	int characterTurn = 0;
@@ -72,18 +73,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		int block = Novice::LoadTexture("./box.png");
 
-		int map[11][11] = {
-			{1,1,1,1,1,1,1,1,1,1,1},
-			{1,0,0,0,0,0,0,0,0,0,1},
-			{1,0,0,0,0,0,0,0,0,0,1},
-			{1,0,0,0,0,2,0,0,0,0,1},
-			{1,0,0,0,0,0,0,0,4,0,1},
-			{1,0,0,0,0,0,0,0,0,0,1},
-			{1,0,0,0,0,0,0,0,0,0,1},
-			{1,5,0,0,0,0,0,0,0,0,1},
-			{1,0,0,0,0,3,0,0,0,0,1},
-			{1,0,0,0,0,0,0,0,0,0,1},
-			{1,1,1,1,1,1,1,1,1,1,1}
+		int map[12][12] = {
+			{1,1,1,1,1,1,1,1,1,1,1,1},
+			{1,3,0,0,0,0,0,0,0,0,0,1},
+			{1,4,0,0,0,0,0,0,0,0,0,1},
+			{1,0,0,0,0,2,0,0,0,0,0,1},
+			{1,0,0,0,0,0,0,0,0,0,0,1},
+			{1,0,0,0,0,0,0,0,0,0,0,1},
+			{1,0,0,0,0,0,0,0,0,0,0,1},
+			{1,5,0,0,0,0,0,0,0,0,0,1},
+			{1,0,0,0,0,0,0,0,0,0,0,1},
+			{1,0,0,0,0,0,0,0,0,0,0,1},
+			{1,0,0,0,0,0,0,0,0,0,0,1},
+			{1,1,1,1,1,1,1,1,1,1,1,1}
 		};
 
 		enum MapInfo {
@@ -103,9 +105,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		int playerPosX = 64;
 		int playerPosY = 64;
-		int playerRadius = 64;
-
-		int playerSpeed = 64;
 
 		int speedTmp = 64;
 
@@ -128,48 +127,89 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/// ↓更新処理ここから
 		///
 
+		//座標をマップ単位に
+		int x = player1.pos.x / blockSize;
+		int y = player1.pos.y / blockSize;
 
-		int x = playerPosX / blockSize;
-		int y = playerPosY / blockSize;
+		//機体の行動順序(orderOfAction)を作る
 
-		//キー操作
+
+		//行動選択(actionSelection,選択の種類は未定)を作る
+		//行動選択は行動順序の中へ
+
+		//プレイヤー1キー操作
 		if (keys[DIK_W] && preKeys[DIK_W] == 0) {
-			int speedYtmp = playerPosY - playerSpeed;
+			int speedYtmp = player1.pos.y - player1.speed;
 
 			y = speedYtmp / blockSize;
 			if (map[y][x] == NONE) {
-				playerPosY -= playerSpeed;
+				player1.pos.y -= player1.speed;
 			}
 		}
 
 		if (keys[DIK_S] && preKeys[DIK_S] == 0) {
-			int speedYtmp = playerPosY + playerSpeed;
+			int speedYtmp = player1.pos.y + player1.speed;
 
 			y = speedYtmp / blockSize;
 			if (map[y][x] == NONE) {
-				playerPosY += playerSpeed;
+				player1.pos.y += player1.speed;
 			}
 		}
 
 		if (keys[DIK_A] && preKeys[DIK_A] == 0) {
-			int speedXtmp = playerPosX - playerSpeed;
+			int speedXtmp = player1.pos.x - player1.speed;
 
 			x = speedXtmp / blockSize;
 			if (map[y][x] == NONE) {
-				playerPosX -= playerSpeed;
+				player1.pos.x -= player1.speed;
 			}
 		}
 
 		if (keys[DIK_D] && preKeys[DIK_D] == 0) {
-			int speedXtmp = playerPosX + playerSpeed;
+			int speedXtmp = player1.pos.x + player1.speed;
 
 			x = speedXtmp / blockSize;
 			if (map[y][x] == NONE) {
-				playerPosX += playerSpeed;
+				player1.pos.x += player1.speed;
 			}
 		}
 
+		//プレイヤー2キー操作
+		if (keys[DIK_W] && preKeys[DIK_W] == 0) {
+			int speedYtmp = player2.pos.y - player2.speed;
 
+			y = speedYtmp / blockSize;
+			if (map[y][x] == NONE) {
+				player2.pos.y -= player2.speed;
+			}
+		}
+
+		if (keys[DIK_S] && preKeys[DIK_S] == 0) {
+			int speedYtmp = player2.pos.y + player2.speed;
+
+			y = speedYtmp / blockSize;
+			if (map[y][x] == NONE) {
+				player2.pos.y += player2.speed;
+			}
+		}
+
+		if (keys[DIK_A] && preKeys[DIK_A] == 0) {
+			int speedXtmp = player2.pos.x - player2.speed;
+
+			x = speedXtmp / blockSize;
+			if (map[y][x] == NONE) {
+				player2.pos.x -= player2.speed;
+			}
+		}
+
+		if (keys[DIK_D] && preKeys[DIK_D] == 0) {
+			int speedXtmp = player2.pos.x + player2.speed;
+
+			x = speedXtmp / blockSize;
+			if (map[y][x] == NONE) {
+				player2.pos.x += player2.speed;
+			}
+		}
 
 		///
 		/// ↑更新処理ここまで
@@ -182,41 +222,27 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			1, 1, 0, WHITE);
 
 
-
-		if (player1.status.isAlive == true) {
-			Novice::DrawBox(player1.pos.x, player1.pos.y,
-				player1.radius, player1.radius,
-				0, GREEN, kFillModeSolid);
-		}
-
-		if (player1.status.isAlive == true) {
-			Novice::DrawBox(player2.pos.x, player2.pos.y,
-				player2.radius, player2.radius,
-				0, RED, kFillModeSolid);
-		}
-
-		if (player1.status.isAlive == true) {
-			Novice::DrawBox(player3.pos.x, player3.pos.y,
-				player3.radius, player3.radius,
-				0, BLACK, kFillModeSolid);
-		}
-
-		if (player1.status.isAlive == true) {
-			Novice::DrawBox(player4.pos.x, player4.pos.y,
-				player4.radius, player4.radius,
-				0, BLUE, kFillModeSolid);
-		}
 		for (int y = 0; y < mapCountY; y++) {
 
 			for (int x = 0; x < mapCountX; x++) {
 				if (map[y][x] == BLOCK) {
-					Novice::DrawSprite(x * blockSize, y * blockSize, block, 0.5f, 0.5f, 0.0f, 0xFFFFFFFF);
+					Novice::DrawSprite(x * blockSize, y * blockSize,block, 0.5f, 0.5f, 0.0f, 0xFFFFFFFF);
 				}
+
 				if (map[y][x] == KNIGHT) {
-					Novice::DrawSprite(x * blockSize, y * blockSize, knight, 1.0f, 1.0f, 0.0f, 0xFFFFFFFF);
+
+					if (player1.status.isAlive == true) {
+
+						Novice::DrawSprite(player1.pos.x, player1.pos.y, knight, 1.0f, 1.0f, 0.0f, 0xFFFFFFFF);
+					}
 				}
+
 				if (map[y][x] == WIZARD) {
-					Novice::DrawSprite(x * blockSize, y * blockSize, wizard, 1.0f, 1.0f, 0.0f, 0xFFFFFFFF);
+
+					if (player2.status.isAlive == true) {
+
+						Novice::DrawSprite(player2.pos.x, player2.pos.y, wizard, 1.0f, 1.0f, 0.0f, 0xFFFFFFFF);
+					}
 				}
 				if (map[y][x] == FIGHTER) {
 					Novice::DrawSprite(x * blockSize, y * blockSize, fighter, 1.0f, 1.0f, 0.0f, 0xFFFFFFFF);
