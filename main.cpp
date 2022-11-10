@@ -19,6 +19,11 @@ typedef struct Status {
 	int hitPoint;
 };
 
+typedef struct MapPos {
+	int mapX;
+	int mapY;
+};
+
 
 typedef struct Player {
 
@@ -26,7 +31,9 @@ typedef struct Player {
 	int speed;
 	int radius;
 	Status status;
+	MapPos mapPos;
 };
+
 
 
 
@@ -45,15 +52,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	char keys[256] = { 0 };
 	char preKeys[256] = { 0 };
 
-	Player player1{ {64,64},64,64,{true,300} };
-	Player player2{ {128,64},64,64,{true,300} };
-	Player player3{ {192,64},64,64,{true,300} };
-	Player player4{ {256,64},64,64,{true,300} };
+	Player player1{ {256,640},64,64,{true,300}, {0,0} };
+	Player player2{ {320,640},64,64,{true,300} ,{0,0} };
+	Player player3{ {384,640},64,64,{true,300} ,{0,0} };
+	Player player4{ {448,640},64,64,{true,300},{0,0} };
 
 	int ghTestMap = Novice::LoadTexture("./testMap.png");
-	int characterTurn = 0;
-	int characterAction = 0;
 
+	int x = 0;
+	int y = 0;
 	// ウィンドウの×ボタンが押されるまでループ
 	while (Novice::ProcessMessage() == 0) {
 		// フレームの開始
@@ -66,7 +73,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		int knight = Novice::LoadTexture("./player1.png");
 		int wizard = Novice::LoadTexture("./player2.png");
 		int fighter = Novice::LoadTexture("./player3.png");
-		int boss = Novice::LoadTexture("./boss.png");
+		int paladin = Novice::LoadTexture("./player4.png");
+		int devil = Novice::LoadTexture("./boss.png");
 
 		//不変
 		const int blockSize = 64;
@@ -74,64 +82,71 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		int block = Novice::LoadTexture("./box.png");
 
 		int map[12][12] = {
-			{1,1,1,1,1,1,1,1,1,1,1,1},
-			{1,3,0,0,0,0,0,0,0,0,0,1},
-			{1,4,0,0,0,0,0,0,0,0,0,1},
-			{1,0,0,0,0,2,0,0,0,0,0,1},
-			{1,0,0,0,0,0,0,0,0,0,0,1},
-			{1,0,0,0,0,0,0,0,0,0,0,1},
-			{1,0,0,0,0,0,0,0,0,0,0,1},
-			{1,5,0,0,0,0,0,0,0,0,0,1},
-			{1,0,0,0,0,0,0,0,0,0,0,1},
-			{1,0,0,0,0,0,0,0,0,0,0,1},
-			{1,0,0,0,0,0,0,0,0,0,0,1},
-			{1,1,1,1,1,1,1,1,1,1,1,1}
+			{6,6,6,6,6,6,6,6,6,6,6,6},
+			{6,0,0,0,0,0,0,0,0,0,0,6},
+			{6,0,0,0,0,5,0,0,0,0,0,6},
+			{6,0,0,0,0,0,0,0,0,0,0,6},
+			{6,0,0,0,0,0,0,0,0,0,0,6},
+			{6,0,0,0,0,0,0,0,0,0,0,6},
+			{6,0,0,0,0,0,0,0,0,0,0,6},
+			{6,0,0,0,0,0,0,0,0,0,0,6},
+			{6,0,0,0,0,0,0,0,0,0,0,6},
+			{6,0,0,0,0,0,0,0,0,0,0,6},
+			{6,0,0,0,0,0,0,0,0,0,0,6},
+			{6,6,6,6,6,6,6,6,6,6,6,6}
 		};
 
 		enum MapInfo {
 
 			NONE,//0
-			BLOCK,//1
-			BOSS,//2
-			KNIGHT,//3
-			WIZARD,//4
-			FIGHTER//5
+			KNIGHT,//1
+			WIZARD,//2
+			FIGHTER,//3
+			PALADIN,//4
+			DEVIL,//5
+			BLOCK//6
+
 		};
 
 		int mapCountX = sizeof(map[0]) / sizeof(map[0][0]);
 		int mapCountY = sizeof(map) / sizeof(map[0]);
 
+		int orderOfAction = 0;
 
+		enum OrdeOfAction {
 
-		int playerPosX = 64;
-		int playerPosY = 64;
+			BREAKTIME,//0
+			PLAYER1,//1
+			PLAYER2,//2
+			PLAYER3,//3
+			PLAYER4,//4
+			BOSS,//5
 
-		int speedTmp = 64;
+		};
 
-		int playerLeftTopX = 0;
-		int playerLeftTopY = 0;
-
-		int playerRightTopX = 0;
-		int playerRightTopY = 0;
-
-		int playerLeftBottomX = 0;
-		int playerLeftBottomY = 0;
-
-		int playerRightBottomX = 0;
-		int playerRightBottomY = 0;
-
-
-
-
+		player1.mapPos.mapX = player1.pos.x / blockSize;
+		player1.mapPos.mapY = player1.pos.y / blockSize;
 		///
 		/// ↓更新処理ここから
 		///
 
-		//座標をマップ単位に
-		int x = player1.pos.x / blockSize;
-		int y = player1.pos.y / blockSize;
+		//座標をマップ単位に(ここを独立させる方法をお悩み中//いったん移動キーの中に移す)
+		x = player1.pos.x / blockSize;
+		y = player1.pos.y / blockSize;
 
 		//機体の行動順序(orderOfAction)を作る
+		switch (orderOfAction) {
+
+		default://ゲームスタート時とエンド時
+
+			break;
+
+
+
+
+
+
+		}
 
 
 		//行動選択(actionSelection,選択の種類は未定)を作る
@@ -139,77 +154,46 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		//プレイヤー1キー操作
 		if (keys[DIK_W] && preKeys[DIK_W] == 0) {
-			int speedYtmp = player1.pos.y - player1.speed;
+			//仮の座標を進ませる
+			int posYTmp = player1.pos.y - player1.speed;
+			player1.mapPos.mapY = posYTmp / blockSize;
+			if (map[player1.mapPos.mapY][player1.mapPos.mapX] == NONE) {
 
-			y = speedYtmp / blockSize;
-			if (map[y][x] == NONE) {
+
 				player1.pos.y -= player1.speed;
 			}
 		}
 
 		if (keys[DIK_S] && preKeys[DIK_S] == 0) {
-			int speedYtmp = player1.pos.y + player1.speed;
 
-			y = speedYtmp / blockSize;
-			if (map[y][x] == NONE) {
+			int posYTmp = player1.pos.y + player1.speed;
+
+			player1.mapPos.mapY = posYTmp / blockSize;
+
+			if (map[player1.mapPos.mapY][player1.mapPos.mapX] == NONE) {
 				player1.pos.y += player1.speed;
 			}
 		}
 
 		if (keys[DIK_A] && preKeys[DIK_A] == 0) {
-			int speedXtmp = player1.pos.x - player1.speed;
 
-			x = speedXtmp / blockSize;
-			if (map[y][x] == NONE) {
+			int posXTmp = player1.pos.x - player1.speed;
+
+			player1.mapPos.mapX = posXTmp / blockSize;
+			if (map[player1.mapPos.mapY][player1.mapPos.mapX] == NONE) {
 				player1.pos.x -= player1.speed;
 			}
 		}
 
 		if (keys[DIK_D] && preKeys[DIK_D] == 0) {
-			int speedXtmp = player1.pos.x + player1.speed;
 
-			x = speedXtmp / blockSize;
-			if (map[y][x] == NONE) {
+			int posXTmp = player1.pos.x + player1.speed;
+			player1.mapPos.mapX = posXTmp / blockSize;
+				if (map[player1.mapPos.mapY][player1.mapPos.mapX] == NONE) {
 				player1.pos.x += player1.speed;
 			}
 		}
 
-		//プレイヤー2キー操作
-		if (keys[DIK_W] && preKeys[DIK_W] == 0) {
-			int speedYtmp = player2.pos.y - player2.speed;
-
-			y = speedYtmp / blockSize;
-			if (map[y][x] == NONE) {
-				player2.pos.y -= player2.speed;
-			}
-		}
-
-		if (keys[DIK_S] && preKeys[DIK_S] == 0) {
-			int speedYtmp = player2.pos.y + player2.speed;
-
-			y = speedYtmp / blockSize;
-			if (map[y][x] == NONE) {
-				player2.pos.y += player2.speed;
-			}
-		}
-
-		if (keys[DIK_A] && preKeys[DIK_A] == 0) {
-			int speedXtmp = player2.pos.x - player2.speed;
-
-			x = speedXtmp / blockSize;
-			if (map[y][x] == NONE) {
-				player2.pos.x -= player2.speed;
-			}
-		}
-
-		if (keys[DIK_D] && preKeys[DIK_D] == 0) {
-			int speedXtmp = player2.pos.x + player2.speed;
-
-			x = speedXtmp / blockSize;
-			if (map[y][x] == NONE) {
-				player2.pos.x += player2.speed;
-			}
-		}
 
 		///
 		/// ↑更新処理ここまで
@@ -226,29 +210,42 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 			for (int x = 0; x < mapCountX; x++) {
 				if (map[y][x] == BLOCK) {
-					Novice::DrawSprite(x * blockSize, y * blockSize,block, 0.5f, 0.5f, 0.0f, 0xFFFFFFFF);
+					Novice::DrawSprite(x * blockSize, y * blockSize, block, 0.5f, 0.5f, 0.0f, 0xFFFFFFFF);
 				}
 
-				if (map[y][x] == KNIGHT) {
 
-					if (player1.status.isAlive == true) {
 
-						Novice::DrawSprite(player1.pos.x, player1.pos.y, knight, 1.0f, 1.0f, 0.0f, 0xFFFFFFFF);
-					}
+				if (player1.status.isAlive == true) {
+
+					Novice::DrawSprite(player1.pos.x, player1.pos.y, knight, 1.0f, 1.0f, 0.0f, 0xFFFFFFFF);
 				}
 
-				if (map[y][x] == WIZARD) {
 
-					if (player2.status.isAlive == true) {
 
-						Novice::DrawSprite(player2.pos.x, player2.pos.y, wizard, 1.0f, 1.0f, 0.0f, 0xFFFFFFFF);
-					}
+
+				if (player2.status.isAlive == true) {
+
+					Novice::DrawSprite(player2.pos.x, player2.pos.y, wizard, 1.0f, 1.0f, 0.0f, 0xFFFFFFFF);
 				}
-				if (map[y][x] == FIGHTER) {
-					Novice::DrawSprite(x * blockSize, y * blockSize, fighter, 1.0f, 1.0f, 0.0f, 0xFFFFFFFF);
-				}
-				if (map[y][x] == BOSS) {
-					Novice::DrawSprite(x * blockSize, y * blockSize, boss, 0.5f, 0.5f, 0.0f, 0xFFFFFFFF);
+
+
+
+				//if (player3.status.isAlive == true) {
+
+				//	Novice::DrawSprite(x * blockSize, y * blockSize, fighter, 1.0f, 1.0f, 0.0f, 0xFFFFFFFF);
+				//}
+
+
+
+
+				//if (player4.status.isAlive == true) {
+
+				//	Novice::DrawSprite(x * blockSize, y * blockSize, paladin, 1.0f, 1.0f, 0.0f, 0xFFFFFFFF);
+				//}
+
+
+				if (map[y][x] == DEVIL) {
+					Novice::DrawSprite(x * blockSize, y * blockSize, devil, 0.25f, 0.25f, 0.0f, 0xFFFFFFFF);
 				}
 			}
 		}
